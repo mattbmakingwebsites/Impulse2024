@@ -1,0 +1,995 @@
+function RsSkinWidgetStaticClass()
+{
+
+
+
+
+
+this.MESSAGE_LOADING='Loading...';
+
+
+
+
+
+
+
+this.URL_DATA='https://www.wellnessliving.com/rs/skin-widget-data.html';
+
+
+
+
+
+
+
+this.URL_DOMAIN='www.wellnessliving.com';
+
+
+
+
+
+
+this.i_height=0;
+
+
+
+
+
+
+
+
+this.is_full_height=false;
+
+
+
+
+
+
+
+
+this.is_standards_mode = true;
+
+
+
+
+
+
+this.height=function(o_widget,i_height)
+{
+var a_frame=o_widget.getElementsByTagName('iframe');
+for(var i=0;i<a_frame.length;i++)
+a_frame[i].setAttribute('height',i_height);
+};
+
+
+
+
+
+
+this.init=function(o_widget)
+{
+
+o_widget.style.display = 'block';
+
+
+if(o_widget.childNodes.length)
+return;
+
+var s_variable=o_widget.getAttribute('data');
+var url_site=null;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+s_variable='sid_screen='+encodeURIComponent(this.screenSid(o_widget))+(s_variable?'&'+s_variable:'');
+
+
+s_variable+='&i_version=1';
+
+try
+{
+url_site=top.location.href;
+}
+catch(e)
+{
+
+}
+
+if(url_site)
+s_variable+='&url_site='+encodeURIComponent(url_site);
+
+let o_div = document.createElement('div');
+o_div.className = 'rs-skin-widget-loading';
+o_div.style.textAlign = 'center';
+
+let o_iframe = document.createElement('iframe');
+o_iframe.className = 'rs-skin-widget-frame';
+o_iframe.height = '1';
+o_iframe.setAttribute("allow", "geolocation;");
+o_iframe.onload = function()
+{
+
+
+if(o_iframe.height === '1')
+o_iframe.height = '100%';
+
+o_div.style.display = 'none';
+};
+o_iframe.src = this.URL_DATA + (s_variable ? '?' + s_variable : '');
+o_iframe.style.border = '0';
+
+
+
+
+o_iframe.style.display = 'block';
+
+o_iframe.style.overflow = 'hidden';
+o_iframe.width = '100%';
+
+o_widget.appendChild(o_iframe);
+o_widget.appendChild(o_div);
+
+let o_img = document.createElement('img');
+o_img.alt = this.MESSAGE_LOADING;
+o_img.height = 56;
+o_img.src = 'https://' + this.URL_DOMAIN + '/im/rs-loading-transparent.gif';
+o_img.title = this.MESSAGE_LOADING;
+o_img.width = 46;
+
+o_div.appendChild(o_img);
+
+this.is_standards_mode = document.compatMode === "CSS1Compat";
+
+window.addEventListener('resize', function(o_event)
+{
+RsSkinWidgetStatic.stickToBottom(o_widget, 'js-skin-widget-stick-bottom');
+});
+};
+
+
+
+
+
+
+
+this.message=function(o_event)
+{
+if(RsSkinWidgetStatic.URL_DATA.substr(0,o_event.origin.length)!==o_event.origin)
+return;
+
+try {
+var a_data=JSON.parse(o_event.data);
+}
+catch (e)
+{
+
+return;
+}
+
+if(!a_data)
+return;
+
+if(
+!a_data.hasOwnProperty('s_source')||
+a_data['s_source']!=='rs.skin.widget.request'&&a_data['s_source']!=='Core.Spa.Application'
+)
+{
+return;
+}
+if(!a_data.hasOwnProperty('s_command'))
+return;
+
+
+
+
+
+var a_frame=document.getElementsByTagName('iframe');
+
+
+
+var o_frame=null;
+let i_frame_select;
+for(var i_frame=0;i_frame<a_frame.length;i_frame++)
+{
+if(a_frame[i_frame].contentWindow===o_event.source)
+{
+i_frame_select=i_frame;
+o_frame=a_frame[i_frame];
+break;
+}
+}
+if(!o_frame)
+{
+console.log('Window not found');
+return;
+}
+
+if(!RsSkinWidgetStaticClass.a_log.hasOwnProperty(i_frame_select))
+{
+RsSkinWidgetStaticClass.a_log[i_frame_select] = [];
+RsSkinWidgetStaticClass.a_log[i_frame_select].push(o_frame.parentNode);
+}
+
+RsSkinWidgetStaticClass.a_log[i_frame_select].push(a_data);
+
+
+
+
+var o_widget = o_frame.parentNode;
+var o_body = document.getElementsByTagName('body')[0];
+
+switch(a_data['s_command'])
+{
+case 'fullHeight':
+if(!a_data.hasOwnProperty('is_full_height') || this.is_full_height === a_data.is_full_height)
+return;
+
+this.is_full_height = a_data.is_full_height;
+if(this.is_full_height)
+{
+if(!a_data.hasOwnProperty('is_schedule_modal') || a_data.is_schedule_modal === false)
+{
+RsSkinWidgetStatic.height(o_widget,'100%');
+o_frame.setAttribute("style", "background: #fff; left: 0; position:fixed; top: 0; z-index: 1;");
+}
+o_body.style.overflow='hidden';
+}
+else
+{
+if(!a_data.hasOwnProperty('is_schedule_modal') || a_data.is_schedule_modal === false)
+{
+if(this.i_height)
+RsSkinWidgetStatic.height(o_widget,this.i_height+'px');
+o_frame.setAttribute("style", "background: none; position:static;");
+}
+o_body.style.overflow='visible';
+}
+break;
+case 'getHeight':
+RsSkinWidgetStatic.messagePost(o_widget,{
+'i_height': window.innerHeight,
+'s_command': 'getHeight'
+});
+break;
+case 'height':
+if(!a_data.hasOwnProperty('i_height'))
+return;
+
+RsSkinWidgetStaticClass.a_log[i_frame_select].push({
+'this.i_height': this.i_height,
+'this.is_full_height': this.is_full_height
+});
+this.i_height = a_data.i_height;
+if(!this.is_full_height)
+{
+RsSkinWidgetStatic.height(o_widget, a_data.i_height+'px');
+RsSkinWidgetStatic.stickToBottom(o_widget, 'js-skin-widget-stick-bottom');
+}
+break;
+case 'reload':
+window.location.reload();
+break;
+case 'scrollToEnd':
+RsSkinWidgetStatic.scrollToEnd(o_widget);
+return;
+case 'scrollToPos':
+RsSkinWidgetStatic.scrollToPos(o_widget,a_data.i_offset);
+return;
+case 'stickToBottom':
+RsSkinWidgetStatic.stickToBottom(o_widget, 'js-skin-widget-stick-bottom');
+return;
+case 'stickToTop':
+RsSkinWidgetStatic.stickToTop(o_widget,a_data.s_class_stick,a_data.s_class_fix);
+return;
+case 'update':
+RsSkinWidgetStatic.update(o_widget);
+break;
+}
+};
+
+
+
+
+
+
+
+
+this.messagePost=function(o_widget,a_data)
+{
+a_data['s_source']='rs.skin.widget.response';
+
+var a_frame=o_widget.getElementsByTagName('iframe');
+var s_data=JSON.stringify(a_data);
+for(var i=0;i<a_frame.length;i++)
+{
+var o_window=a_frame[i].contentWindow||a_frame[i].contentDocument;
+o_window.postMessage(s_data,'*');
+}
+};
+
+
+
+
+
+
+
+this.getScrollParent = function(o_node)
+{
+if(o_node === null)
+return null;
+
+if(this.is_standards_mode)
+return document.body;
+
+
+if(o_node.scrollHeight > o_node.clientHeight || o_node === document.body)
+return o_node;
+
+return this.getScrollParent(o_node.parentNode);
+}
+
+
+
+
+
+
+
+this.getOffsetTop = function(o_node)
+{
+var f_offsetParent = o_node.offsetParent ? this.getOffsetTop(o_node.offsetParent) : 0;
+return o_node.offsetTop + f_offsetParent;
+}
+
+
+
+
+
+
+
+this.stickToBottom = function(o_widget, s_class_stick)
+{
+const o_this = this;
+const a_frame = o_widget.getElementsByTagName('iframe');
+
+for(let i = 0; i < a_frame.length; i++)
+{
+const o_scroll_node = this.getScrollParent(a_frame[i]);
+
+if (o_scroll_node)
+{
+const i_frame_height = a_frame[i].clientHeight;
+const i_frame_offset = o_this.getOffsetTop(a_frame[i]);
+
+o_scroll_node.onscroll = function()
+{
+const i_client_height = window.innerHeight;
+const i_scroll = o_this.is_standards_mode
+? document.documentElement.scrollTop
+: o_scroll_node.scrollTop;
+
+let i_bottom = Math.floor(i_frame_height - i_client_height - i_scroll + i_frame_offset);
+
+if (i_bottom < 0)
+{
+i_bottom = 0;
+}
+else if(i_bottom + 400 > i_frame_height)
+{
+
+return;
+}
+
+o_this.messagePost(o_widget, {
+'s_command': 'setBottom',
+'i_bottom': i_bottom,
+'s_class_stick': s_class_stick,
+});
+};
+
+o_scroll_node.onscroll();
+}
+}
+}
+
+
+
+
+
+
+
+
+this.stickToTop = function(o_widget,s_class_stick,s_class_fix)
+{
+var a_frame = o_widget.getElementsByTagName('iframe');
+for(var i = 0; i < a_frame.length; i++)
+{
+var o_scroll_node = this.getScrollParent(a_frame[i]);
+if(o_scroll_node)
+{
+o_scroll_node.onscroll = function()
+{
+var o_scroll_node;
+if(this instanceof Window)
+o_scroll_node = this.document.body;
+else
+o_scroll_node = this;
+
+var i_scroll = o_scroll_node.scrollTop;
+
+var a_frame_inner = o_scroll_node.getElementsByTagName('iframe');
+for(var j = 0; j < a_frame_inner.length; j++)
+{
+if(!a_frame_inner[j] || !a_frame_inner[j].contentDocument)
+continue;
+
+var o_sticky = a_frame_inner[j].contentDocument.getElementsByClassName(s_class_stick)[0];
+var o_fix = a_frame_inner[j].contentDocument.getElementsByClassName(s_class_fix)[0];
+
+if(i_scroll>=o_fix.offsetTop)
+o_sticky.style.top = (i_scroll-o_fix.offsetTop)+'px';
+else
+o_sticky.style.top = 0;
+}
+};
+}
+}
+};
+
+
+
+
+
+
+
+
+this.scrollToEnd=function(o_widget)
+{
+var a_frame = o_widget.getElementsByTagName('iframe');
+
+var i_scroll = 0;
+for(var i=0;i<a_frame.length;i++)
+{
+var o_scroll_node = this.getScrollParent(a_frame[i]);
+if(o_scroll_node)
+{
+o_scroll_node.scrollTo(0,a_frame[i].clientHeight + a_frame[i].offsetTop);
+if(!i)
+i_scroll = o_scroll_node.clientHeight + o_scroll_node.offsetTop - window.innerHeight;
+}
+}
+if(i_scroll)
+window.scrollTo(0,i_scroll);
+};
+
+
+
+
+
+
+
+this.scrollToPos=function(o_widget,i_offset)
+{
+var a_frame = o_widget.getElementsByTagName('iframe');
+
+var i_scroll = 0;
+for(var i=0;i<a_frame.length;i++)
+{
+
+
+
+
+
+i_scroll += a_frame[i].getBoundingClientRect().top+window.scrollY;
+}
+
+window.scrollTo(0,i_scroll+i_offset);
+};
+
+
+
+
+
+
+this.update=function(o_widget)
+{
+
+var a_div=o_widget.getElementsByTagName('div');
+var i;
+
+for(i=0;i<a_div.length;i++)
+a_div[i].style.display='none';
+
+
+var a_frame=o_widget.getElementsByTagName('iframe');
+for(i=0;i<a_frame.length;i++)
+a_frame[i].style.display='';
+
+var s_protocol=null;
+try
+{
+s_protocol=top.location.protocol;
+}
+catch(e)
+{
+
+}
+
+if(s_protocol)
+{
+this.messagePost(o_widget,{
+'s_command': 'update',
+'s_protocol': s_protocol
+});
+}
+
+this.messagePost(o_widget,{
+'s_command': 'frameVisible'
+});
+};
+
+
+var a_widget=document.getElementsByClassName('wl-widget');
+for(var i=0;i<a_widget.length;i++)
+this.init(a_widget[i]);
+}
+
+
+
+
+
+
+
+RsSkinWidgetStaticClass.prototype.screenSid=function(o_widget)
+{
+var i_width=o_widget.offsetWidth;
+if(i_width>1024)
+return 'pc';
+if(i_width>640)
+return 'tab';
+
+return 'mobile';
+};
+
+
+if(!RsSkinWidgetStaticClass.a_log)
+RsSkinWidgetStaticClass.a_log = {};
+
+
+
+
+
+
+
+var RsSkinWidgetStatic=new RsSkinWidgetStaticClass();
+
+if(window.addEventListener)
+{
+window.addEventListener("message",function(o_event)
+{
+RsSkinWidgetStatic.message(o_event);
+},false);
+}
+else
+{
+window.attachEvent("onmessage",function(o_event)
+{
+RsSkinWidgetStatic.message(o_event);
+});
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function MpNoteWidgetClass()
+{
+
+
+
+
+
+
+this.URL_TOP='https://www.wellnessliving.com/';
+
+
+
+
+
+
+this.i_hide_percent=100;
+
+
+
+
+
+
+
+
+
+
+
+
+this.is_hide_quick=false;
+
+
+
+
+
+
+this.o_frame=null;
+
+
+
+
+
+
+
+
+this.r_process=false;
+
+
+
+
+
+
+
+
+this.r_start=false;
+
+
+
+
+
+
+
+
+this._frame_window=function(o_frame)
+{
+return o_frame.contentWindow||o_frame.contentDocument;
+};
+
+
+
+
+
+
+
+this._height=function()
+{
+var o_style=this._style(this.o_container);
+var i_height_a=
+parseInt(this.o_container.clientHeight)+
+(o_style.marginTop?parseInt(o_style.marginTop):0)+
+(o_style.marginBottom?parseInt(o_style.marginBottom):0)+
+(o_style.borderTopWidth?parseInt(o_style.borderTopWidth):0)+
+(o_style.borderBottomWidth?parseInt(o_style.borderBottomWidth):0);
+var i_height_b=this.o_container.offsetHeight?this.o_container.offsetHeight:0;
+return i_height_a>i_height_b?i_height_a:i_height_b;
+};
+
+
+
+
+
+
+
+
+
+this._hide_now=function()
+{
+if(MpNoteWidget.r_start)
+{
+window.clearTimeout(MpNoteWidget.r_start);
+MpNoteWidget.r_start=false;
+}
+MpNoteWidget.is_hide_quick=true;
+MpNoteWidget._hide_start();
+return false;
+};
+
+
+
+
+
+
+
+
+this._hide_process=function()
+{
+if(!MpNoteWidget.o_frame||!MpNoteWidget.o_container)
+return;
+
+if(MpNoteWidget.i_hide_percent<=0)
+{
+MpNoteWidget.r_process=false;
+MpNoteWidget.o_frame.style.display='none';
+MpNoteWidget.o_text.innerHTML='';
+}
+else
+{
+MpNoteWidget.i_hide_percent-=MpNoteWidget.is_hide_quick?15:3;
+
+if(MpNoteWidget.i_hide_percent<0)
+MpNoteWidget.i_hide_percent=0;
+
+MpNoteWidget.o_container.style.opacity=MpNoteWidget.i_hide_percent/100;
+
+MpNoteWidget.r_start=window.setTimeout(MpNoteWidget._hide_process,50);
+}
+};
+
+
+
+
+
+
+
+
+this._hide_start=function()
+{
+if(MpNoteWidget.r_process)
+{
+window.clearTimeout(MpNoteWidget.r_process);
+MpNoteWidget.r_process=false;
+}
+
+MpNoteWidget.r_start=false;
+MpNoteWidget.i_hide_percent=100;
+MpNoteWidget._hide_process();
+};
+
+
+
+
+
+
+this._show=function(i_delay)
+{
+if(!i_delay)
+i_delay=5000;
+
+if(MpNoteWidget.r_start)
+{
+window.clearTimeout(MpNoteWidget.r_start);
+MpNoteWidget.r_start=false;
+}
+if(MpNoteWidget.r_process)
+{
+window.clearTimeout(MpNoteWidget.r_process);
+MpNoteWidget.r_process=false;
+}
+
+MpNoteWidget.o_frame.style.display='';
+MpNoteWidget.o_container.style.opacity='1';
+MpNoteWidget.o_frame.style.height=MpNoteWidget._height()+'px';
+MpNoteWidget.is_hide_quick=false;
+
+MpNoteWidget.r_start=window.setTimeout(MpNoteWidget._hide_start,i_delay);
+};
+
+
+
+
+
+
+
+
+this._style=function(o_element)
+{
+if(typeof o_element.currentStyle!=='undefined')
+return o_element.currentStyle;
+else
+return document.defaultView.getComputedStyle(o_element,null);
+};
+
+
+
+
+
+
+
+
+
+
+this.container=function(a_data)
+{
+var o_frame_window;
+var o_frame_document;
+
+if(this.o_frame)
+{
+o_frame_window=this._frame_window(this.o_frame);
+o_frame_document=o_frame_window.document;
+
+if(o_frame_document.getElementById('mp-note-div'))
+return;
+}
+
+if(!this.o_frame)
+{
+this.o_frame=document.getElementById('mp-note-frame');
+
+if(this.o_frame)
+{
+o_frame_window=this._frame_window(this.o_frame);
+o_frame_document=o_frame_window.document;
+
+this.o_container=o_frame_document.getElementById('mp-note-div');
+if(this.o_container)
+{
+this.o_text=o_frame_document.getElementById('mp-note-text');
+o_frame_window.MpNoteLink=this;
+return;
+}
+}
+else
+{
+var o_div=document.createElement('div');
+o_div.innerHTML=a_data.s_frame.trim();
+document.body.appendChild(o_div.childNodes[0]);
+this.o_frame=document.getElementById('mp-note-frame');
+}
+}
+
+o_frame_window=this._frame_window(this.o_frame);
+o_frame_document=o_frame_window.document;
+
+o_frame_document.open();
+o_frame_document.write(a_data.s_body);
+o_frame_document.close();
+
+this.o_container=o_frame_document.getElementById('mp-note-div');
+this.o_text=o_frame_document.getElementById('mp-note-text');
+o_frame_window.MpNoteLink=this;
+};
+
+
+
+
+
+
+
+
+
+
+this.init=function(o_window)
+{
+this.message_send(o_window,{
+'s_command': 'init'
+});
+};
+
+
+
+
+
+
+
+
+this.message_get=function(o_event)
+{
+if(MpNoteWidget.URL_TOP.substr(0,o_event.origin.length)!==o_event.origin)
+return;
+
+try {
+var a_data=JSON.parse(o_event.data);
+}
+catch (e)
+{
+
+return;
+}
+
+if(!a_data)
+return;
+
+if(!a_data.hasOwnProperty('s_source')||a_data['s_source']!=='mp.note')
+return;
+if(!a_data.hasOwnProperty('s_command'))
+return;
+
+switch(a_data['s_command'])
+{
+case 'init':
+MpNoteWidget.init(o_event.source);
+break;
+case 'show':
+MpNoteWidget.show(a_data);
+break;
+}
+};
+
+
+
+
+
+
+
+this.message_send=function(o_window,a_data)
+{
+a_data['s_source']='mp.note.widget';
+
+
+
+o_window.postMessage(JSON.stringify(a_data),'*');
+};
+
+
+
+
+
+
+
+
+
+
+
+
+this.show=function(a_data)
+{
+this.container(a_data);
+
+
+if(this.o_frame.style.display!=='none'&&a_data.is_skip)
+return;
+
+if(this.o_frame.style.display==='none'||!a_data.is_multiple)
+this.o_text.innerHTML=a_data.s_code;
+else
+this.o_text.innerHTML=this.o_text.innerHTML+a_data.s_code;
+
+let a_class = [];
+if(a_data.hasOwnProperty('s_class_add'))
+a_class.push(a_data.s_class_add);
+if(!a_data.is_multiple)
+a_class.push(a_data.s_mode);
+
+if(a_class.length)
+this.o_container.setAttribute('class',a_class.join(' '));
+
+this.o_text.scrollTop=this.o_text.scrollHeight;
+
+this._show(a_data.i_delay);
+};
+}
+
+
+
+
+
+
+
+var MpNoteWidget=new MpNoteWidgetClass();
+
+if(window.addEventListener)
+window.addEventListener("message",MpNoteWidget.message_get,false);
+else
+window.attachEvent("onmessage",MpNoteWidget.message_get);
